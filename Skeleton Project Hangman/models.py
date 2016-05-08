@@ -7,30 +7,40 @@ from datetime import date
 from protorpc import messages
 from google.appengine.ext import ndb
 
-
 class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
     email =ndb.StringProperty()
+    wins = ndb.IntegerProperty(default=0)
+    loses = ndb.IntegerProperty(default=0)
+
+    def to_form(self):
+        performance = self.wins * 1.0 / (self.wins + self.loses)
+        return UserForm(
+            user_name=self.name,
+            performance=performance)
 
 
 class Game(ndb.Model):
     """Game object"""
+    target = ndb.StringProperty(required=True)
+    revealed_word = ndb.StringProperty(required=True)
+    attempts_allowed = ndb.IntegerProperty(required=True)
+    attempts_remaining = ndb.IntegerProperty(required=True, default=5)
     game_over = ndb.BooleanProperty(required=True, default=False)
-    user1 = ndb.KeyProperty(required=True, kind='User')
-    user2 = ndb.KeyProperty(required=True, kind='User')
-    turn = ndb.StringProperty(required=True, default=str(user1))
-    winner = ndb.StringProperty(required=True, default='')
+    user = ndb.KeyProperty(required=True, kind='User')
 
     @classmethod
-    def new_game(cls, user1, user2):
+    def new_game(cls, user, target, attempts):
         """Creates and returns a new game"""
-        # if max < min:
-        #     raise ValueError('Maximum must be greater than minimum')
-        game = Game(user1=user1,
-                    user2=user2,
-                    turn=str(user1),
-                    winner='',
+        if len(target) == 0:
+            raise ValueError('Target word cannot be null.')
+
+        game = Game(user=user,
+                    target=target,
+                    revealed_word='*' * len(target),
+                    attempts_allowed=attempts,
+                    attempts_remaining=attempts,
                     game_over=False)
         game.put()
         return game
@@ -39,26 +49,21 @@ class Game(ndb.Model):
         """Returns a GameForm representation of the Game"""
         form = GameForm()
         form.urlsafe_key = self.key.urlsafe()
-        form.user1_name = self.user1.get().name
-        form.user2_name = self.user2.get().name
-        form.turn = self.turn
-        form.winner = self.winner
+        form.user_name = self.user.get().name
+        form.attempts_remaining = self.attempts_remaining
         form.game_over = self.game_over
         form.message = message
+        form.revealed_word = self.revealed_word
         return form
 
-    def end_game(self, winner=''):
+    def end_game(self, won=False):
         """Ends the game - if won is True, the player won. - if won is False,
         the player lost."""
         self.game_over = True
-        self.winner = winner
         self.put()
         # Add the game to the score 'board'
-        if winner == 'user1':
-            score = Score(user=self.user1, date=date.today(), won=won)
-        if winner == 'user2':
-            score = Score(user=self.user2, date=date.today(), won=won)
-        
+        score = Score(user=self.user, date=date.today(), won=won,
+                      guesses=self.attempts_allowed - self.attempts_remaining)
         score.put()
 
 
@@ -81,19 +86,23 @@ class GameForm(messages.Message):
     game_over = messages.BooleanField(3, required=True)
     message = messages.StringField(4, required=True)
     user_name = messages.StringField(5, required=True)
+    revealed_word = messages.StringField(6, required=True)
 
+
+class GameForms(messages.Message):
+    """Return multiple GameForms"""
+    items = messages.MessageField(GameForm, 1, repeated=True)
 
 class NewGameForm(messages.Message):
     """Used to create a new game"""
     user_name = messages.StringField(1, required=True)
-    min = messages.IntegerField(2, default=1)
-    max = messages.IntegerField(3, default=10)
-    attempts = messages.IntegerField(4, default=5)
+    target = messages.StringField(2, required=True)
+    attempts = messages.IntegerField(3, default=5)
 
 
 class MakeMoveForm(messages.Message):
     """Used to make a move in an existing game"""
-    guess = messages.IntegerField(1, required=True)
+    guess = messages.StringField(1, required=True)
 
 
 class ScoreForm(messages.Message):
@@ -107,6 +116,17 @@ class ScoreForm(messages.Message):
 class ScoreForms(messages.Message):
     """Return multiple ScoreForms"""
     items = messages.MessageField(ScoreForm, 1, repeated=True)
+
+
+class UserForm(messages.Message):
+    """HighScoreForm for outbound Highest Score information"""
+    user_name = messages.StringField(1, required=True)
+    performance = messages.FloatField(2, required=True)
+
+
+class UserForms(messages.Message):
+    """HighScoreForm for outbound Highest Score information"""
+    items = messages.MessageField(UserForm, 1, repeated=True)
 
 
 class StringMessage(messages.Message):
