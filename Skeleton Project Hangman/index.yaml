@@ -19,3 +19,14 @@ indexes:
   properties:
   - name: won
   - name: guesses
+
+- kind: User
+  properties:
+  - name: performance
+  - name: wins
+
+- kind: User
+  properties:
+  - name: performance
+    direction: desc
+  - name: wins

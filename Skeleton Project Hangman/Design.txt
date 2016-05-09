@@ -1,0 +1,21 @@
+##Design Reflect
+###Additional properties added in the models  
+    - Wins, loses and performance properties added in model User. The 3 new proprties are used for user's ranking. They are intialized as integer 0 and float 0 when a new user is created. When game is ending in 'make_move' endpoints, the wins or loses will be updated according to the game result. The performance field, standing for winning ratio, is also calculated and updated. There is a new UserForm to outbound the user and performance.
+
+    - Target property in model Game. It is changed to a string field for the Hangman game. It is input as a parameter when creating a new game.
+
+    - Revealed_word property added in model Game. This property is a string used for feedback to the user to show how many letters the user has figured out. Its length is same as target word, while it's all '*' intially. The figured out letters are revealed while the other letters remain screened as '*'.
+
+    - Moves property added in model Game. It is used to record each move made and feedback of the move for a game history. It is a repeated string field. When creating a new game, this field is intialized as an empty list. When each move is made, the move content, including the letter guessed and the revealed word, and the game result when game is over, is pushed in the moves field. There is a MoveHistoryForm for its outbound.
+
+
+###What were some of the trade-offs or struggles you faced when implementing the new game logic.
+    - Hangman is a one-player game, so no multi users necessary in a game. Unlike replying 'too low' or 'too high' in guess-a-number, it reveals the letters in the target word as the game state. So a revealed_word field is used for this feature for the game.
+
+    - Delete the game when doing cancel_game endpoint. After cancellation, the game will not be recalled or used for some statistics, so just delete the Game model itself, instead of adding a new flag field to reserve it.
+
+    - Add wins/loses/performance fields for the user ranking in the User model. A new function to_form() is added for the outbound of user_name and performance. A second order of winning games in the query is used in the case of equal performance(winning ratio). It may be better make a new model as Performance, associated to user, to separate the user information and performance information.
+
+    - Add a moves as a repeated string property in Game model for the game history. The moves property is updated when a move is made in the game. The move record contains guessed letter and the updated revealed word in each move. The associated Game Form is also updated for its update in game state. A new MoveHistoryForm is also made for the history outbound.
+
+    - In email notification, only users who have incompleted games will be notified every 1 hour. In SendReminderEmail() in main.py, for each user, query for the games whose game_over flag is False, standing for incompleted games. Only if there is incompleted games exist under the user, send the mail to the user.

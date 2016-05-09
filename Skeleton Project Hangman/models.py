@@ -18,7 +18,9 @@ class User(ndb.Model):
     def to_form(self):
         return UserForm(
             user_name=self.name,
-            performance=self.performance)
+            performance=self.performance,
+            wins=self.wins,
+            loses=self.loses)
 
 
 class Game(ndb.Model):
@@ -42,7 +44,8 @@ class Game(ndb.Model):
                     revealed_word='*' * len(target),
                     attempts_allowed=attempts,
                     attempts_remaining=attempts,
-                    game_over=False)
+                    game_over=False,
+                    moves=[])
         game.put()
         return game
 
@@ -55,6 +58,7 @@ class Game(ndb.Model):
         form.game_over = self.game_over
         form.message = message
         form.revealed_word = self.revealed_word
+        form.moves = self.moves
         return form
 
     def end_game(self, won=False):
@@ -67,13 +71,13 @@ class Game(ndb.Model):
                       guesses=self.attempts_allowed - self.attempts_remaining)
         score.put()
 
+        user = User.query(User.name == self.user.get().name).get()
         if won:
-            self.user.wins += 1
+            user.wins += 1
         else:
-            self.user.loses += 1
-        self.user.performance = self.user.wins * 1.0 / ( \
-            self.user.wins + self.user.loses)
-        self.user.put()
+            user.loses += 1
+        user.performance = user.wins * 1.0 / (user.wins + user.loses)
+        user.put()
 
 
 class Score(ndb.Model):
@@ -96,13 +100,15 @@ class GameForm(messages.Message):
     message = messages.StringField(4, required=True)
     user_name = messages.StringField(5, required=True)
     revealed_word = messages.StringField(6, required=True)
+    moves = messages.StringField(7, repeated=True)
 
 
 class GameForms(messages.Message):
     """Return multiple GameForms"""
     items = messages.MessageField(GameForm, 1, repeated=True)
 
-class NewGameForm(messages.Message):
+
+lass NewGameForm(messages.Message):
     """Used to create a new game"""
     user_name = messages.StringField(1, required=True)
     target = messages.StringField(2, required=True)
@@ -128,16 +134,24 @@ class ScoreForms(messages.Message):
 
 
 class UserForm(messages.Message):
-    """HighScoreForm for outbound Highest Score information"""
+    """UserForm for outbound User's performance information"""
     user_name = messages.StringField(1, required=True)
     performance = messages.FloatField(2, required=True)
+    wins=messages.IntegerField(3, required=True)
+    loses=messages.IntegerField(4, required=True)
 
 
 class UserForms(messages.Message):
-    """HighScoreForm for outbound Highest Score information"""
+    """Return multiple UserForms"""
     items = messages.MessageField(UserForm, 1, repeated=True)
+
+
+class MoveHistoryForm(messages.Message):
+    """MoveHistoryForm for outbound a completed game's moves history"""
+    moves = messages.StringField(1, repeated=True)
 
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)
+
