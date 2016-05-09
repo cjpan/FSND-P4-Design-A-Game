@@ -13,12 +13,12 @@ class User(ndb.Model):
     email =ndb.StringProperty()
     wins = ndb.IntegerProperty(default=0)
     loses = ndb.IntegerProperty(default=0)
+    performance = ndb.FloatProperty(default=0.0)
 
     def to_form(self):
-        performance = self.wins * 1.0 / (self.wins + self.loses)
         return UserForm(
             user_name=self.name,
-            performance=performance)
+            performance=self.performance)
 
 
 class Game(ndb.Model):
@@ -29,6 +29,7 @@ class Game(ndb.Model):
     attempts_remaining = ndb.IntegerProperty(required=True, default=5)
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
+    moves = ndb.StringProperty(repeated=True)
 
     @classmethod
     def new_game(cls, user, target, attempts):
@@ -65,6 +66,14 @@ class Game(ndb.Model):
         score = Score(user=self.user, date=date.today(), won=won,
                       guesses=self.attempts_allowed - self.attempts_remaining)
         score.put()
+
+        if won:
+            self.user.wins += 1
+        else:
+            self.user.loses += 1
+        self.user.performance = self.user.wins * 1.0 / ( \
+            self.user.wins + self.user.loses)
+        self.user.put()
 
 
 class Score(ndb.Model):

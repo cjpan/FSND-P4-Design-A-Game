@@ -13,7 +13,7 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreForms, GameForms
+    ScoreForms, GameForms, UserForm, UserForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -138,7 +138,7 @@ class HangmanApi(remote.Service):
                 game.revealed_word = game.revealed_word[:i] + \
                 game.target[i] + game.revealed_word[i+1:]
                 msg = 'Hit!'
-        
+
         if game.revealed_word == game.target:
             game.end_game(True)
             return game.to_form('You win!')
@@ -184,13 +184,23 @@ class HangmanApi(remote.Service):
         return ScoreForms(items=[score.to_form() for score in scores])
 
     @endpoints.method(response_message=UserForms,
-            path='ranking', http_method='GET', name='getProfile')
-    def getProfile(self, request):
-        """Return user profile."""
-        users = User.query()
+            path='ranking', http_method='GET', name='get_user_rankings')
+    def get_user_rankings(self, request):
+        """Return user rankings."""
+        users = User.query().order(User.performance).order(wins)
         return UserForms(
             items=[user.to_form() for user in users])
 
+    @endpoints.method(request_message=MAKE_MOVE_REQUEST,
+                      response_message=GameForm,
+                      path='game/history/{urlsafe_game_key}',
+                      name='get_game_history',
+                      http_method='PUT')
+    def get_game_history(self, request):
+        """Return user rankings."""
+        users = User.query().order(User.performance).order(wins)
+        return UserForms(
+            items=[user.to_form() for user in users])
 
     @endpoints.method(response_message=StringMessage,
                       path='games/average_attempts',
@@ -205,7 +215,7 @@ class HangmanApi(remote.Service):
         """Populates memcache with the average moves remaining of Games"""
         games = Game.query(Game.game_over == False).fetch()
         if games:
-            count = len(games)
+            count = len(games
             total_attempts_remaining = sum([game.attempts_remaining
                                         for game in games])
             average = float(total_attempts_remaining)/count
