@@ -7,10 +7,11 @@ from datetime import date
 from protorpc import messages
 from google.appengine.ext import ndb
 
+
 class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
-    email =ndb.StringProperty()
+    email = ndb.StringProperty()
     wins = ndb.IntegerProperty(default=0)
     loses = ndb.IntegerProperty(default=0)
     performance = ndb.FloatProperty(default=0.0)
@@ -108,7 +109,7 @@ class GameForms(messages.Message):
     items = messages.MessageField(GameForm, 1, repeated=True)
 
 
-lass NewGameForm(messages.Message):
+class NewGameForm(messages.Message):
     """Used to create a new game"""
     user_name = messages.StringField(1, required=True)
     target = messages.StringField(2, required=True)
@@ -137,8 +138,8 @@ class UserForm(messages.Message):
     """UserForm for outbound User's performance information"""
     user_name = messages.StringField(1, required=True)
     performance = messages.FloatField(2, required=True)
-    wins=messages.IntegerField(3, required=True)
-    loses=messages.IntegerField(4, required=True)
+    wins = messages.IntegerField(3, required=True)
+    loses = messages.IntegerField(4, required=True)
 
 
 class UserForms(messages.Message):
@@ -154,4 +155,3 @@ class MoveHistoryForm(messages.Message):
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)
-

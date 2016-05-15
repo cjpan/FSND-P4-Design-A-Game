@@ -18,8 +18,9 @@ class SendReminderEmail(webapp2.RequestHandler):
         app_id = app_identity.get_application_id()
         users = User.query(User.email != None)
         for user in users:
-            games = Game.query(Game.game_over==False).fetch()
-            if games:            
+            games = Game.query(Game.user == user.key).filter(
+                Game.game_over == False).fetch()
+            if games:
                 subject = 'This is a reminder!'
                 body = 'Hello {}, Don\'t forget you still have an incompleted \
                         game!'.format(user.name)

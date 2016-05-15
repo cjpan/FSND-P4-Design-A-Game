@@ -11,11 +11,17 @@
  
 ##Game Description:
 Hangman is a word-guessing game. Each game begins with a secret word 'target'.
-The player tries to guess it by suggesting letters within a certain number of guesses 'attempts'.
-'Guesses' are sent to the 'make_move' endpoint which will reply with 'Hit' or 'Miss' replies and a revealed word.
-If the target word contains the guessed letter, the letters in the target will be revealed.
-While the other letters in the target word will be screened with a '*'.
-If all letters in the target word are revealed within allowed attempts, the user wins the game. If the maximum attempts are reached, the user loses the game.
+The player tries to guess it by suggesting letters within a certain number of 
+guesses 'attempts'. 'Guesses' are sent to the 'make_move' endpoint which will 
+reply with 'Hit' or 'Miss' replies and a revealed word. The player can suggest 
+the whole word at any time. If the target word contains the guessed letter, 
+the letters in the target will be revealed. While the other letters in the 
+target word will be screened with a '*'. If all letters in the target word are 
+revealed within allowed attempts, the user wins the game. 
+If the maximum attempts are reached, the user loses the game.
+
+When the user wins a game, the score is the remaining attempts number. The score
+will be saved in the score board.
 
 Many different Hangman games can be played by many different Users at any
 given time. Each game can be retrieved or played by using the path parameter
